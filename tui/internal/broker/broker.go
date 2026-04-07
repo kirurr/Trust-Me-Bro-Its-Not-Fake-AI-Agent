@@ -13,18 +13,18 @@ type Message struct {
 }
 
 type BrokerImpl struct {
-	Conn          *amqp.Connection
-	Ch            *amqp.Channel
+	conn          *amqp.Connection
+	ch            *amqp.Channel
 	incomingQueue *amqp.Queue
 	outgoingQueue *amqp.Queue
 }
 
 func (b *BrokerImpl) Close() {
-	if b.Ch != nil {
-		_ = b.Ch.Close()
+	if b.ch != nil {
+		_ = b.ch.Close()
 	}
-	if b.Conn != nil {
-		_ = b.Conn.Close()
+	if b.conn != nil {
+		_ = b.conn.Close()
 	}
 }
 
@@ -65,15 +65,15 @@ func NewRabbitMQBroker() (*BrokerImpl, error) {
 	}
 
 	return &BrokerImpl{
-		Conn:          conn,
-		Ch:            ch,
+		conn:          conn,
+		ch:            ch,
 		incomingQueue: &incomingQueue,
 		outgoingQueue: &outgoingQueue,
 	}, nil
 }
 
 func (b *BrokerImpl) Send(message Message, ctx context.Context) error {
-	err := b.Ch.PublishWithContext(
+	err := b.ch.PublishWithContext(
 		ctx,
 		"",
 		b.outgoingQueue.Name,
@@ -94,7 +94,7 @@ func (b *BrokerImpl) Send(message Message, ctx context.Context) error {
 }
 
 func (b *BrokerImpl) Messages(ctx context.Context) (<-chan Message, error) {
-	deliveries, err := b.Ch.Consume(
+	deliveries, err := b.ch.Consume(
 		b.incomingQueue.Name,
 		"",
 		true,

@@ -136,19 +136,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, sendToBroker(m.send, broker.Message{Text: text})
 
 		default:
-			// Send all other keypresses to the textarea.
-			// var cmd tea.Cmd
-			// m.textarea, cmd = m.textarea.Update(msg)
-			// return m, cmd
-			//
 			var cmds []tea.Cmd
 
-			// прокидываем в textarea
 			var taCmd tea.Cmd
 			m.textarea, taCmd = m.textarea.Update(msg)
 			cmds = append(cmds, taCmd)
 
-			// прокидываем в viewport — он сам обработает стрелки/pageup/pagedown
 			var vpCmd tea.Cmd
 			m.viewport, vpCmd = m.viewport.Update(msg)
 			cmds = append(cmds, vpCmd)
@@ -157,7 +150,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case cursor.BlinkMsg:
-		// Textarea should also process cursor blinks.
 		var cmd tea.Cmd
 		m.textarea, cmd = m.textarea.Update(msg)
 		return m, cmd

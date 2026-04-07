@@ -22,17 +22,18 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	incoming, err := b.Messages(ctx)
+	incoming_ch, err := b.Messages(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
 		os.Exit(1)
 	}
 
-	p := tea.NewProgram(ui.InitialModel(incoming, func(message broker.Message) error {
+	p := tea.NewProgram(ui.InitialModel(incoming_ch, func(message broker.Message) error {
 		sendCtx, sendCancel := context.WithTimeout(ctx, 5*time.Second)
 		defer sendCancel()
 		return b.Send(message, sendCtx)
 	}))
+
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
 	}
