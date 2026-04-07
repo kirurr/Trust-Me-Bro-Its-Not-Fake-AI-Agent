@@ -6,8 +6,10 @@ require (
 	charm.land/bubbles/v2 v2.1.0
 	charm.land/bubbletea/v2 v2.0.2
 	charm.land/lipgloss/v2 v2.0.2
-	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared v0.0.0
 )
+
+replace github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared => ../shared
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
