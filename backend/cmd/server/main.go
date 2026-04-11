@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
 
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/db"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
@@ -25,8 +28,6 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-
-	fmt.Println("Starting server")
 
 	ch, err := broker.Messages(ctx, sharedbroker.MakeBackendQueueName())
 	if err != nil {
@@ -59,5 +60,18 @@ func main() {
 		}
 	}()
 
-	select {}
+	mainMux := http.NewServeMux()
+	mainMux.Handle("/users/", http.StripPrefix("/users", user.GetUserMux()))
+
+	server := &http.Server{
+		Addr:         ":8080",
+		Handler:      mainMux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 20 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	log.Fatal(server.ListenAndServe())
+	fmt.Println("Starting server on port 8080")
+
 }
