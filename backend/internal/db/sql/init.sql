@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS users (
+	id UUID PRIMARY KEY,
+	name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+	id SERIAL PRIMARY KEY,
+	role TEXT CHECK (role IN ( 'user', 'system' )),
+	user_id UUID NOT NULL REFERENCES users(id),
+	message TEXT NOT NULL,
+	sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+

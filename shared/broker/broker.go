@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,27 +10,30 @@ import (
 )
 
 type Message struct {
-	Text string
+	Text   string `json:"text"`
+	UserId string `json:"user_id"`
 }
 
 type Config struct {
-	URL           string
-	IncomingQueue string
-	OutgoingQueue string
+	URL string
 }
 
 type RabbitMQBroker struct {
-	conn          *amqp.Connection
-	ch            *amqp.Channel
-	incomingQueue *amqp.Queue
-	outgoingQueue *amqp.Queue
+	conn *amqp.Connection
+	ch   *amqp.Channel
+}
+
+func MakeBackendQueueName() string {
+	return "tui.outgoing"
+}
+
+func MakeClientQueueName(userId string) string {
+	return fmt.Sprintf("tui.%s", userId)
 }
 
 func DefaultConfigFromEnv() Config {
 	return Config{
-		URL:           getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-		IncomingQueue: getEnv("RABBITMQ_INCOMING_QUEUE", "tui.incoming"),
-		OutgoingQueue: getEnv("RABBITMQ_OUTGOING_QUEUE", "tui.outgoing"),
+		URL: getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 	}
 }
 
@@ -44,40 +48,9 @@ func NewRabbitMQBroker(config Config) (*RabbitMQBroker, error) {
 		_ = conn.Close()
 		return nil, fmt.Errorf("failed to open a channel: %w", err)
 	}
-
-	incomingQueue, err := ch.QueueDeclare(
-		config.IncomingQueue,
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		_ = ch.Close()
-		_ = conn.Close()
-		return nil, fmt.Errorf("failed to declare incoming queue: %w", err)
-	}
-
-	outgoingQueue, err := ch.QueueDeclare(
-		config.OutgoingQueue,
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		_ = ch.Close()
-		_ = conn.Close()
-		return nil, fmt.Errorf("failed to declare outgoing queue: %w", err)
-	}
-
 	return &RabbitMQBroker{
-		conn:          conn,
-		ch:            ch,
-		incomingQueue: &incomingQueue,
-		outgoingQueue: &outgoingQueue,
+		conn: conn,
+		ch:   ch,
 	}, nil
 }
 
@@ -94,17 +67,38 @@ func (b *RabbitMQBroker) Close() {
 	}
 }
 
-func (b *RabbitMQBroker) Send(message Message, ctx context.Context) error {
-	err := b.ch.PublishWithContext(
+func (b *RabbitMQBroker) Send(
+	ctx context.Context,
+	message Message,
+	queue string,
+) error {
+	q, err := b.ch.QueueDeclare(
+		queue,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare queue: %w", err)
+	}
+
+	m, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	err = b.ch.PublishWithContext(
 		ctx,
 		"",
-		b.outgoingQueue.Name,
+		q.Name,
 		false,
 		false,
 		amqp.Publishing{
-			ContentType:  "text/plain",
+			ContentType:  "application/json",
 			DeliveryMode: amqp.Persistent,
-			Body:         []byte(message.Text),
+			Body:         m,
 		},
 	)
 	if err != nil {
@@ -113,10 +107,21 @@ func (b *RabbitMQBroker) Send(message Message, ctx context.Context) error {
 
 	return nil
 }
+func (b *RabbitMQBroker) Messages(ctx context.Context, queue string) (<-chan Message, error) {
+	q, err := b.ch.QueueDeclare(
+		queue,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to declare queue: %w", err)
+	}
 
-func (b *RabbitMQBroker) Messages(ctx context.Context) (<-chan Message, error) {
 	deliveries, err := b.ch.Consume(
-		b.incomingQueue.Name,
+		q.Name,
 		"",
 		true,
 		false,
@@ -139,10 +144,18 @@ func (b *RabbitMQBroker) Messages(ctx context.Context) (<-chan Message, error) {
 				if !ok {
 					return
 				}
+
+				var m Message
+				err := json.Unmarshal(delivery.Body, &m)
+				if err != nil {
+					fmt.Printf("Failed to unmarshal message: %v\n", err)
+					continue
+				}
+
 				select {
 				case <-ctx.Done():
 					return
-				case out <- Message{Text: string(delivery.Body)}:
+				case out <- m:
 				}
 			}
 		}

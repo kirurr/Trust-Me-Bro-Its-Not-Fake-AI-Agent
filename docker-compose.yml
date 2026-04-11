@@ -12,7 +12,6 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
-
   rabbitmq:
     image: rabbitmq:4-management
     container_name: rabbitmq
@@ -30,6 +29,25 @@ services:
       timeout: 5s
       retries: 12
     restart: unless-stopped
-
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-mydb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 volumes:
   rabbitmq-data:
+  postgres_data:
+    driver: local
