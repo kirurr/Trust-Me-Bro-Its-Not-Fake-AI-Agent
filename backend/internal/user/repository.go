@@ -3,13 +3,14 @@ package user
 import (
 	"database/sql"
 	"fmt"
+	u "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
 
 type UserRepositoryInterface interface {
-	GetUserById(id string) (*User, error)
-	GetUserMessages(id string) ([]Message, error)
-	CreateUser(user *User) error
-	CreateMessage(message *Message) error
+	GetUserById(id string) (*u.User, error)
+	GetUserMessages(id string) ([]u.Message, error)
+	CreateUser(user *u.User) error
+	CreateMessage(message *u.Message) error
 }
 
 type UserRepository struct {
@@ -22,8 +23,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) GetUserById(id string) (*User, error) {
-	var user User
+func (r *UserRepository) GetUserById(id string) (*u.User, error) {
+	var user u.User
 	err := r.db.QueryRow(
 		"SELECT id FROM users WHERE id = $1",
 		id,
@@ -38,12 +39,12 @@ func (r *UserRepository) GetUserById(id string) (*User, error) {
 	}
 	return &user, nil
 }
-func (r *UserRepository) GetUserMessages(id string) ([]Message, error) {
-	u, err := r.GetUserById(id)
+func (r *UserRepository) GetUserMessages(id string) ([]u.Message, error) {
+	existingUser, err := r.GetUserById(id)
 	if err != nil {
 		return nil, err
 	}
-	if u == nil {
+	if existingUser == nil {
 		return nil, fmt.Errorf("user not found")
 	}
 
@@ -56,9 +57,9 @@ func (r *UserRepository) GetUserMessages(id string) ([]Message, error) {
 	}
 	defer rows.Close()
 
-	var messages []Message
+	var messages []u.Message
 	for rows.Next() {
-		var m Message
+		var m u.Message
 		err := rows.Scan(&m.Id, &m.Role, &m.UserId, &m.Message, &m.SentAt)
 		if err != nil {
 			return nil, err
@@ -69,7 +70,7 @@ func (r *UserRepository) GetUserMessages(id string) ([]Message, error) {
 	return messages, nil
 }
 
-func (r *UserRepository) CreateUser(user *User) error {
+func (r *UserRepository) CreateUser(user *u.User) error {
 	u, err := r.GetUserById(user.Id)
 	if err != nil {
 		return err
@@ -89,14 +90,14 @@ func (r *UserRepository) CreateUser(user *User) error {
 // CreateMessage creates a new message for the user
 //
 // If the user does not exist, it creates the user first
-func (r *UserRepository) CreateMessage(message *Message) error {
+func (r *UserRepository) CreateMessage(message *u.Message) error {
 	user, err := r.GetUserById(message.UserId)
 	if err != nil {
 		return err
 	}
 
 	if user == nil {
-		err = r.CreateUser(NewUser(message.UserId))
+		err = r.CreateUser(u.NewUser(message.UserId))
 		if err != nil {
 			return err
 		}

@@ -1,10 +1,14 @@
 package user
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"github.com/google/uuid"
+	u "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
 
 const USER_FILE_NAME = "user.txt"
@@ -69,4 +73,35 @@ func CreateOrLoadUser() (*User, error) {
 	return &User{
 		Id: id,
 	}, nil
+}
+
+func GetUserMessagesFromBackend(userId string) ([]u.Message, error) {
+	var BACKEND_URL = os.Getenv("BACKEND_URL")
+
+	if BACKEND_URL == "" {
+		BACKEND_URL = "http://localhost:8080/"
+	}
+
+	url := BACKEND_URL + fmt.Sprintf("users/%s/messages", userId)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user messages: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read user messages: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get user messages: %s \n %s", resp.Status, string(body))
+	}
+
+	var messages []u.Message
+	err = json.Unmarshal(body, &messages)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal user messages: %w", err)
+	}
+	return messages, nil
 }

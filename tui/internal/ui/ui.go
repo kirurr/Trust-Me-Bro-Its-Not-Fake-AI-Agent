@@ -14,8 +14,17 @@ import (
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/broker"
 )
 
-type externalMessage struct {
-	data broker.Message
+type MessageRole string
+
+const (
+	RoleUser   MessageRole = "user"
+	RoleRemote MessageRole = "remote"
+	RoleSystem MessageRole = "system"
+)
+
+type ExternalMessage struct {
+	Data broker.Message
+	Role MessageRole
 }
 
 type sendMessage_cb func(broker.Message) error
@@ -30,7 +39,7 @@ func waitForMsg(ch <-chan broker.Message) tea.Cmd {
 		if !ok {
 			return sendResultMessage{err: fmt.Errorf("broker listener stopped")}
 		}
-		return externalMessage{data: msg}
+		return ExternalMessage{Data: msg}
 	}
 }
 
@@ -91,8 +100,16 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case externalMessage:
-		m.chat.AddRemoteMessage(msg.data.Text)
+	case ExternalMessage:
+		if msg.Role == RoleRemote {
+			m.chat.AddRemoteMessage(msg.Data.Text)
+		}
+		if msg.Role == RoleUser {
+			m.chat.AddUserMessage(msg.Data.Text)
+		}
+		if msg.Role == RoleSystem {
+			m.chat.AddSystemMessage(msg.Data.Text)
+		}
 		m.refreshViewport()
 		return m, waitForMsg(m.incoming_ch)
 

@@ -1,5 +1,7 @@
 package user
 
+import b "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
+
 type User struct {
 	Id string `json:"id"`
 }
@@ -38,5 +40,12 @@ func NewMessage(
 		UserId:  userId,
 		Message: message,
 		SentAt:  sentAt,
+	}
+}
+
+func (m *Message) ToBrokerMessage() b.Message {
+	return b.Message{
+		Text:   m.Message,
+		UserId: m.UserId,
 	}
 }

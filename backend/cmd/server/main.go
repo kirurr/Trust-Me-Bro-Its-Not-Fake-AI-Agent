@@ -10,6 +10,7 @@ import (
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/db"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
 	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
+	shareduser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
 
 func main() {
@@ -46,9 +47,9 @@ func main() {
 					return
 				}
 				fmt.Println(msg)
-				err := userRepo.CreateMessage(user.NewMessage(
+				err := userRepo.CreateMessage(shareduser.NewMessage(
 					"",
-					user.RoleUser,
+					shareduser.RoleUser,
 					msg.UserId,
 					msg.Text,
 					"",
