@@ -38,26 +38,34 @@ func (r *UserRepository) GetUserById(id string) (*User, error) {
 	}
 	return &user, nil
 }
-
 func (r *UserRepository) GetUserMessages(id string) ([]Message, error) {
 	u, err := r.GetUserById(id)
 	if err != nil {
 		return nil, err
 	}
 	if u == nil {
-		return nil, fmt.Errorf("User not found")
+		return nil, fmt.Errorf("user not found")
 	}
 
-	var messages []Message
-	err = r.db.QueryRow(
+	rows, err := r.db.Query(
 		"SELECT id, role, user_id, message, sent_at FROM messages WHERE user_id = $1",
 		id,
-	).Scan(
-		&messages,
 	)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
+	var messages []Message
+	for rows.Next() {
+		var m Message
+		err := rows.Scan(&m.Id, &m.Role, &m.UserId, &m.Message, &m.SentAt)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, m)
+	}
+
 	return messages, nil
 }
 

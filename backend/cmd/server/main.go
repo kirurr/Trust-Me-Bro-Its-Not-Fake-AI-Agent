@@ -61,7 +61,7 @@ func main() {
 	}()
 
 	mainMux := http.NewServeMux()
-	mainMux.Handle("/users/", http.StripPrefix("/users", user.GetUserMux()))
+	mainMux.Handle("/users/", http.StripPrefix("/users", user.GetUserMux(userRepo)))
 
 	server := &http.Server{
 		Addr:         ":8080",
@@ -71,7 +71,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	log.Fatal(server.ListenAndServe())
 	fmt.Println("Starting server on port 8080")
-
+	log.Fatal(server.ListenAndServe())
 }
