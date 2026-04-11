@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/db"
+	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
 	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
 )
 
@@ -19,7 +20,7 @@ func main() {
 	defer cancel()
 
 	dbUrl := "postgres://admin:secret@localhost:5432/mydb"
-	db, err := db.GetPostgreSQL_db(dbUrl)
+	db, err := db.GetPostgreSQLDB(dbUrl)
 	if err != nil {
 		panic(err)
 	}
@@ -32,6 +33,8 @@ func main() {
 		panic(err)
 	}
 
+	userRepo := user.NewUserRepository(db)
+
 	go func() {
 		for {
 			select {
@@ -42,6 +45,16 @@ func main() {
 					return
 				}
 				fmt.Println(msg)
+				err := userRepo.CreateMessage(user.NewMessage(
+					"",
+					user.RoleUser,
+					msg.UserId,
+					msg.Text,
+					"",
+				))
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}()

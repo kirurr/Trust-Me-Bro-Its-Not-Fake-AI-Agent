@@ -16,7 +16,7 @@ func InitDB(db *sql.DB) error {
 	return err
 }
 
-func GetPostgreSQL_db(url string) (*sql.DB, error) {
+func GetPostgreSQLDB(url string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
