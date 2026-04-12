@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+body {
+  @apply min-h-screen bg-linear-to-tr from-blue-900 to-purple-900 text-white;
+}
