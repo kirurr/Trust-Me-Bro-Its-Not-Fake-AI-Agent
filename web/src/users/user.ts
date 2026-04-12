@@ -6,36 +6,25 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
-export function userFromJson(input: string): User {
-  const json = JSON.parse(input);
-
-  return userSchema.parse({
-    id: json.id,
-    role: json.role,
-    userId: json.user_id,
-    message: json.message,
-    sentAt: json.sent_at,
-  });
-}
-
 export const messageSchema = z.object({
   id: z.string(),
   role: z.enum(["user", "system"]),
-  userId: z.string(),
+  user_id: z.string(),
   message: z.string(),
-  sentAt: z.string(),
-});
+  sent_at: z.string(),
+}).transform((value) => ({
+  id: value.id,
+  role: value.role as "user" | "system",
+  userId: value.user_id,
+  message: value.message,
+  sentAt: value.sent_at,
+}));
 
 export type Message = z.infer<typeof messageSchema>;
 
-export function messageFromJson(input: string): Message {
-  const json = JSON.parse(input);
+export const userWithMessagesSchema = z.object({
+	user: userSchema,
+	messages: z.array(messageSchema),
+})
 
-  return messageSchema.parse({
-    id: json.id,
-    role: json.role,
-    userId: json.user_id,
-    message: json.message,
-    sentAt: json.sent_at,
-  });
-}
+export type UserWithMessages = z.infer<typeof userWithMessagesSchema>;

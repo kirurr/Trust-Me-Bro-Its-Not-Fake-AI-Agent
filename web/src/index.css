@@ -1,5 +1,11 @@
-@import "tailwindcss";
+/* @import "tailwindcss"; */
+@layer theme, base, antd, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-body {
-  @apply min-h-screen bg-linear-to-tr from-blue-900 to-purple-900 text-white;
+@layer base {
+  body {
+    @apply flex flex-col min-h-screen bg-linear-to-tr from-blue-950 to-purple-950 text-white ;
+  }
 }

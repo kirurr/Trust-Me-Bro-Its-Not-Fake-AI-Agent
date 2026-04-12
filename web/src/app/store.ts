@@ -2,10 +2,12 @@ import { configureStore } from "@reduxjs/toolkit";
 import usersSlice from "../users/usersSlice";
 import { listenerMiddleware } from "./listenerMiddleware";
 import { apiSlice } from "./apiSlice";
+import chatSlice from "../chat/chatSlice";
 
 export const store = configureStore({
   reducer: {
     users: usersSlice,
+    chat: chatSlice,
     [apiSlice.reducerPath]: apiSlice.reducer,
   },
   middleware: (getDefaultMIddleware) =>
