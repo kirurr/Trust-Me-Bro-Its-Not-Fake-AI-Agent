@@ -11,7 +11,7 @@ func GetUserMux(
 	UserMux := http.NewServeMux()
 
 	UserMux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		users, err := userRepo.GetAllUsers()
+		users, err := userRepo.GetAllUsersWithMessages()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))

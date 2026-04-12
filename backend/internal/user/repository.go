@@ -6,12 +6,17 @@ import (
 	u "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
 
+type UserWithMessages struct {
+	User     u.User      `json:"user"`
+	Messages []u.Message `json:"messages"`
+}
+
 type UserRepositoryInterface interface {
 	GetUserById(id string) (*u.User, error)
 	GetUserMessages(id string) ([]u.Message, error)
 	CreateUser(user *u.User) error
 	CreateMessage(message *u.Message) error
-	GetAllUsers() ([]u.User, error)
+	GetAllUsersWithMessages() ([]UserWithMessages, error)
 }
 
 type UserRepository struct {
@@ -24,24 +29,63 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) GetAllUsers() ([]u.User, error) {
-	rows, err := r.db.Query("SELECT id FROM users")
+func (r *UserRepository) GetAllUsersWithMessages() ([]UserWithMessages, error) {
+	rows, err := r.db.Query(
+		`SELECT u.id, m.id, m.role, m.user_id, m.message, m.sent_at
+        FROM users u
+        LEFT JOIN messages m ON u.id = m.user_id
+        ORDER BY m.sent_at DESC`,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []u.User
+	usersMap := make(map[string]*UserWithMessages)
+	var order []string
+
 	for rows.Next() {
-		var user u.User
-		err := rows.Scan(&user.Id)
+		var userID string
+		var (
+			msgID     sql.NullString
+			msgRole   sql.NullString
+			msgUserID sql.NullString
+			msgText   sql.NullString
+			msgSentAt sql.NullString
+		)
+
+		err := rows.Scan(&userID, &msgID, &msgRole, &msgUserID, &msgText, &msgSentAt)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+
+		if _, exists := usersMap[userID]; !exists {
+			usersMap[userID] = &UserWithMessages{User: u.User{Id: userID}}
+			order = append(order, userID)
+		}
+
+		if msgID.Valid {
+			msg := u.Message{
+				Id:      msgID.String,
+				Role:    u.UserRole(msgRole.String),
+				UserId:  msgUserID.String,
+				Message: msgText.String,
+				SentAt:  msgSentAt.String,
+			}
+			usersMap[userID].Messages = append(usersMap[userID].Messages, msg)
+		}
 	}
 
-	return users, nil
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	result := make([]UserWithMessages, 0, len(usersMap))
+	for _, id := range order {
+		result = append(result, *usersMap[id])
+	}
+
+	return result, nil
 }
 
 func (r *UserRepository) GetUserById(id string) (*u.User, error) {
