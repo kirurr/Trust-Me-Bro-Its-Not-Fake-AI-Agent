@@ -10,6 +10,24 @@ func GetUserMux(
 ) *http.ServeMux {
 	UserMux := http.NewServeMux()
 
+	UserMux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		users, err := userRepo.GetAllUsers()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		j, err := json.Marshal(users)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(j))
+	})
+
 	UserMux.HandleFunc("GET /{id}/messages", func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if userId == "" {

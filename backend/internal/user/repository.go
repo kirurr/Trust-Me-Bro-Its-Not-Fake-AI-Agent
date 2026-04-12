@@ -11,6 +11,7 @@ type UserRepositoryInterface interface {
 	GetUserMessages(id string) ([]u.Message, error)
 	CreateUser(user *u.User) error
 	CreateMessage(message *u.Message) error
+	GetAllUsers() ([]u.User, error)
 }
 
 type UserRepository struct {
@@ -21,6 +22,26 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{
 		db: db,
 	}
+}
+
+func (r *UserRepository) GetAllUsers() ([]u.User, error) {
+	rows, err := r.db.Query("SELECT id FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []u.User
+	for rows.Next() {
+		var user u.User
+		err := rows.Scan(&user.Id)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 func (r *UserRepository) GetUserById(id string) (*u.User, error) {
