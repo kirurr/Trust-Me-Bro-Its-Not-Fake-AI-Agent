@@ -3,7 +3,6 @@ import { useAppSelector } from "../../app/hooks";
 import { selectActiveUser } from "../../users/userApi";
 import { useSendMessageMutation } from "../chatApi";
 import { useState } from "react";
-import type { WsMessage } from "../wsMessage";
 
 export default function ChatWindow() {
   const activeUser = useAppSelector(selectActiveUser);
@@ -19,11 +18,10 @@ export default function ChatWindow() {
       return;
     }
 
-    const messageToSend: WsMessage = {
+    sendMessage({
       userId: activeUser.user.id,
       text: message,
-    };
-    sendMessage(messageToSend);
+    });
     setMessage("");
   };
   return (
@@ -34,10 +32,7 @@ export default function ChatWindow() {
         ))}
       </ul>
       <div className="flex flex-row gap-2">
-        <Input
-					value={message}
-					onChange={(e) => setMessage(e.target.value)}
-				/>
+        <Input value={message} onChange={(e) => setMessage(e.target.value)} />
         <Button loading={isLoading} onClick={handleSend} type="primary">
           send
         </Button>

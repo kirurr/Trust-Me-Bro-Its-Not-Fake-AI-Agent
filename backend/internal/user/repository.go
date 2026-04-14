@@ -15,7 +15,7 @@ type UserRepositoryInterface interface {
 	GetUserById(id string) (*u.User, error)
 	GetUserMessages(id string) ([]u.Message, error)
 	CreateUser(user *u.User) error
-	CreateMessage(message *u.Message) error
+	CreateMessage(message *u.Message) (*u.Message, error)
 	GetAllUsersWithMessages() ([]UserWithMessages, error)
 }
 
@@ -23,7 +23,7 @@ type UserRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
+func NewUserRepository(db *sql.DB) UserRepositoryInterface {
 	return &UserRepository{
 		db: db,
 	}
@@ -155,24 +155,36 @@ func (r *UserRepository) CreateUser(user *u.User) error {
 // CreateMessage creates a new message for the user
 //
 // If the user does not exist, it creates the user first
-func (r *UserRepository) CreateMessage(message *u.Message) error {
+func (r *UserRepository) CreateMessage(message *u.Message) (*u.Message, error) {
 	user, err := r.GetUserById(message.UserId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if user == nil {
 		err = r.CreateUser(u.NewUser(message.UserId))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	_, err = r.db.Exec(
-		"INSERT INTO messages (role, user_id, message) VALUES ($1, $2, $3)",
+	var m u.Message
+	err = r.db.QueryRow(
+		"INSERT INTO messages (role, user_id, message) VALUES ($1, $2, $3) RETURNING id, role, user_id, message, sent_at",
 		message.Role,
 		message.UserId,
 		message.Message,
+	).Scan(
+		&m.Id,
+		&m.Role,
+		&m.UserId,
+		&m.Message,
+		&m.SentAt,
 	)
-	return err
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &m, nil
 }

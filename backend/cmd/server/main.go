@@ -11,7 +11,7 @@ import (
 
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/db"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
-	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/ws"
+	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/ws"
 	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
 	shareduser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
@@ -50,19 +50,22 @@ func main() {
 				if !ok {
 					return
 				}
-				j, err := json.Marshal(msg)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				hub.Broadcast([]byte(j))
-				err = userRepo.CreateMessage(shareduser.NewMessage(
+
+				m, err := userRepo.CreateMessage(shareduser.NewMessage(
 					"",
 					shareduser.RoleUser,
 					msg.UserId,
 					msg.Text,
 					"",
 				))
+
+				j, err := json.Marshal(m)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				hub.Broadcast([]byte(j))
+
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -71,7 +74,7 @@ func main() {
 	}()
 
 	onSystemMessage := func(msg []byte) {
-		var m ws.MessageFromChat
+		var m shareduser.Message
 
 		decoder := json.NewDecoder(bytes.NewReader(msg))
 		decoder.DisallowUnknownFields()
@@ -81,11 +84,11 @@ func main() {
 			return
 		}
 
-		err := userRepo.CreateMessage(shareduser.NewMessage(
+		_, err := userRepo.CreateMessage(shareduser.NewMessage(
 			"",
 			shareduser.RoleSystem,
 			m.UserId,
-			m.Text,
+			m.Message,
 			"",
 		))
 		if err != nil {
@@ -93,7 +96,7 @@ func main() {
 		}
 
 		err = broker.Send(ctx, sharedbroker.Message{
-			Text:   m.Text,
+			Text:   m.Message,
 			UserId: m.UserId,
 		}, sharedbroker.MakeClientQueueName(m.UserId))
 		if err != nil {

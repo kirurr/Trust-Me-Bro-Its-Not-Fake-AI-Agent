@@ -1,17 +1,17 @@
 import { apiSlice } from "../app/apiSlice";
 import { store } from "../app/store";
-import type { UserWithMessages } from "../users/user";
+import {
+  messageSchema,
+  messageToJson,
+  type Message,
+  type UserWithMessages,
+} from "../users/user";
 import { userApi } from "../users/userApi";
 import { closeWs, getWs } from "./ws";
-import {
-  wsMessageSchema,
-  wsMessageToUserMessage,
-  type WsMessage,
-} from "./wsMessage";
 
 export const chatApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    sendMessage: builder.mutation<void, WsMessage>({
+    sendMessage: builder.mutation<void, { userId: string; text: string }>({
       queryFn: (message) => {
         const ws = getWs();
 
@@ -21,11 +21,16 @@ export const chatApi = apiSlice.injectEndpoints({
             return;
           }
 
-          const data = JSON.stringify({
-            user_id: message.userId,
-            text: message.text,
-          });
-          ws.send(data);
+          const data = {
+            id: "",
+            userId: message.userId,
+            message: message.text,
+            role: "system" as const,
+            sentAt: new Date().toISOString(),
+          };
+          const json = messageToJson(data);
+          ws.send(json);
+
           store.dispatch(
             userApi.util.updateQueryData(
               "getUsers",
@@ -33,7 +38,7 @@ export const chatApi = apiSlice.injectEndpoints({
               (draft: UserWithMessages[]) => {
                 draft
                   .find((user) => user.user.id === message.userId)
-                  ?.messages.push(wsMessageToUserMessage(message, "system"));
+                  ?.messages.push(data);
               },
             ),
           );
@@ -42,7 +47,7 @@ export const chatApi = apiSlice.injectEndpoints({
         });
       },
     }),
-    subscribeToUserMessages: builder.query<WsMessage[], void>({
+    subscribeToUserMessages: builder.query<Message[], void>({
       queryFn: () => ({ data: [] }),
 
       async onCacheEntryAdded(_, { cacheDataLoaded, cacheEntryRemoved }) {
@@ -60,9 +65,8 @@ export const chatApi = apiSlice.injectEndpoints({
           });
 
           ws.addEventListener("message", (event) => {
-            const message = JSON.parse(event.data);
-            const parsedWsMessage = wsMessageSchema.parse(message);
-            const userMessage = wsMessageToUserMessage(parsedWsMessage, "user");
+            const json = JSON.parse(event.data);
+            const message = messageSchema.parse(json);
 
             store.dispatch(
               userApi.util.updateQueryData(
@@ -70,20 +74,20 @@ export const chatApi = apiSlice.injectEndpoints({
                 undefined,
                 (draft: UserWithMessages[]) => {
                   const user = draft.find(
-                    (user) => user.user.id === userMessage.userId,
+                    (user) => user.user.id === message.userId,
                   );
 
                   if (!user) {
                     draft.push({
                       user: {
-                        id: userMessage.userId,
+                        id: message.userId,
                       },
-                      messages: [userMessage],
+                      messages: [message],
                     });
                     return;
                   }
 
-                  user.messages.push(userMessage);
+                  user.messages.push(message);
                 },
               ),
             );
