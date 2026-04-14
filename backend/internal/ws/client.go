@@ -26,6 +26,7 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{clients: make(map[*Client]struct{})}
 }
+
 func (h *Hub) Register(c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
