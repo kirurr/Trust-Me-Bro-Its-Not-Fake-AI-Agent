@@ -6,7 +6,7 @@ import {
   type Message,
   type UserWithMessages,
 } from "../users/user";
-import { userApi } from "../users/userApi";
+import { setUserHasNewMessagesThunk, userApi } from "../users/userApi";
 import { closeWs, getWs } from "./ws";
 
 export const chatApi = apiSlice.injectEndpoints({
@@ -55,17 +55,7 @@ export const chatApi = apiSlice.injectEndpoints({
 
         try {
           await cacheDataLoaded;
-
-          ws.addEventListener("open", () => {
-            console.log("WebSocket connection established");
-          });
-
-          ws.addEventListener("close", () => {
-            console.log("WebSocket connection closed");
-          });
-
           ws.addEventListener("message", (event) => {
-						console.log("recieved message");
             const json = JSON.parse(event.data);
             const message = messageSchema.parse(json);
 
@@ -84,6 +74,7 @@ export const chatApi = apiSlice.injectEndpoints({
                         id: message.userId,
                       },
                       messages: [message],
+                      hasNewMessages: true,
                     });
                     return;
                   }
@@ -97,6 +88,10 @@ export const chatApi = apiSlice.injectEndpoints({
                   } else {
                     user.messages.push(message);
                   }
+
+                  store.dispatch(
+                    setUserHasNewMessagesThunk(message.userId, true),
+                  );
                 },
               ),
             );

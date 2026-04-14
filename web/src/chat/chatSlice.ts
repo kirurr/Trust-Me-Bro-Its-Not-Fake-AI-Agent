@@ -1,4 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { setUserHasNewMessagesThunk } from "../users/userApi";
+import type { AppThunk } from "../app/store";
 
 interface ChatState {
   activeUserId: string | null;
@@ -28,3 +30,10 @@ export const { setActiveUserId, clearActiveUserId } = chatSlice.actions;
 export const { getActiveUserId } = chatSlice.selectors;
 
 export default chatSlice.reducer;
+
+export const setActiveChat =
+  (userId: string): AppThunk =>
+  (dispatch) => {
+    dispatch(setActiveUserId(userId));
+    dispatch(setUserHasNewMessagesThunk(userId, false));
+  };

@@ -37,6 +37,7 @@ export function messageToJson(message: Message): string {
 export const userWithMessagesSchema = z.object({
   user: userSchema,
   messages: z.array(messageSchema),
+  hasNewMessages: z.boolean().default(false),
 });
 
 export type UserWithMessages = z.infer<typeof userWithMessagesSchema>;

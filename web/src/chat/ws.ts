@@ -1,7 +1,7 @@
 let ws: WebSocket | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const WS_URL = import.meta.env.VITE_BACKEND_URL || "ws://localhost:8080/ws";
+const WS_URL = import.meta.env.VITE_BACKEND_WS_URL || "ws://localhost:8080/ws";
 const RECONNECT_DELAY = 2000;
 
 function connect() {
