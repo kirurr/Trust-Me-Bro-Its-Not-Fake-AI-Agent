@@ -2,8 +2,10 @@ import { Card } from "antd";
 import { useGetUsersQuery } from "../../users/userApi";
 import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
+import { useSubscribeToUserMessagesQuery } from "../chatApi";
 
 export default function ChatPage() {
+	const {isError: isWsError, error: wsError} = useSubscribeToUserMessagesQuery();
   const { data, isLoading, isSuccess, isError, error } = useGetUsersQuery();
 
   return (
@@ -18,6 +20,7 @@ export default function ChatPage() {
         {isError && <div>Error: {error.toString()}</div>}
 
         {isSuccess && <ChatList users={data} />}
+				{isWsError && <div>Error: {wsError.toString()}</div>}
       </div>
 			<ChatWindow />
     </Card>

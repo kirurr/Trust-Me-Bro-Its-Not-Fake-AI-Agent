@@ -34,7 +34,7 @@ func (r *UserRepository) GetAllUsersWithMessages() ([]UserWithMessages, error) {
 		`SELECT u.id, m.id, m.role, m.user_id, m.message, m.sent_at
         FROM users u
         LEFT JOIN messages m ON u.id = m.user_id
-        ORDER BY m.sent_at DESC`,
+        ORDER BY m.sent_at ASC`,
 	)
 	if err != nil {
 		return nil, err
