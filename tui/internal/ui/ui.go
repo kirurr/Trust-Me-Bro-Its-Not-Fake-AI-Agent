@@ -39,7 +39,7 @@ func waitForMsg(ch <-chan broker.Message) tea.Cmd {
 		if !ok {
 			return sendResultMessage{err: fmt.Errorf("broker listener stopped")}
 		}
-		return ExternalMessage{Data: msg}
+		return ExternalMessage{Data: msg, Role: RoleRemote}
 	}
 }
 

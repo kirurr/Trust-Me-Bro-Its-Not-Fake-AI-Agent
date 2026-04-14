@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/db"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
+	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/ws"
 	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
 	shareduser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
@@ -37,6 +40,7 @@ func main() {
 
 	userRepo := user.NewUserRepository(db)
 
+	hub := ws.NewHub()
 	go func() {
 		for {
 			select {
@@ -46,8 +50,13 @@ func main() {
 				if !ok {
 					return
 				}
-				fmt.Println(msg)
-				err := userRepo.CreateMessage(shareduser.NewMessage(
+				j, err := json.Marshal(msg)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				hub.Broadcast([]byte(j))
+				err = userRepo.CreateMessage(shareduser.NewMessage(
 					"",
 					shareduser.RoleUser,
 					msg.UserId,
@@ -61,8 +70,50 @@ func main() {
 		}
 	}()
 
+	onSystemMessage := func(msg []byte) {
+		var m ws.MessageFromChat
+
+		decoder := json.NewDecoder(bytes.NewReader(msg))
+		decoder.DisallowUnknownFields()
+
+		if err := decoder.Decode(&m); err != nil {
+			fmt.Println("decode error: ", err)
+			return
+		}
+
+		err := userRepo.CreateMessage(shareduser.NewMessage(
+			"",
+			shareduser.RoleSystem,
+			m.UserId,
+			m.Text,
+			"",
+		))
+		if err != nil {
+			fmt.Println("error creating system message: ", err)
+		}
+
+		err = broker.Send(ctx, sharedbroker.Message{
+			Text:   m.Text,
+			UserId: m.UserId,
+		}, sharedbroker.MakeClientQueueName(m.UserId))
+		if err != nil {
+			fmt.Println("error sending message to client: ", err)
+		}
+	}
+
 	mainMux := http.NewServeMux()
 	mainMux.Handle("/users/", http.StripPrefix("/users", user.GetUserMux(userRepo)))
+	mainMux.HandleFunc(
+		"/ws",
+		func(w http.ResponseWriter, r *http.Request) {
+			ws.WsHandler(
+				hub,
+				onSystemMessage,
+				w,
+				r,
+			)
+		},
+	)
 
 	server := &http.Server{
 		Addr:         ":8080",

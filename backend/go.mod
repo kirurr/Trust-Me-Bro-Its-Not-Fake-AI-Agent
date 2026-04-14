@@ -3,6 +3,7 @@ module github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend
 go 1.25.0
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared v0.0.0
 )
