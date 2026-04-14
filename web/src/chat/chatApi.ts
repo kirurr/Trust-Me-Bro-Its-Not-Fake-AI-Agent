@@ -65,6 +65,7 @@ export const chatApi = apiSlice.injectEndpoints({
           });
 
           ws.addEventListener("message", (event) => {
+						console.log("recieved message");
             const json = JSON.parse(event.data);
             const message = messageSchema.parse(json);
 
@@ -87,7 +88,15 @@ export const chatApi = apiSlice.injectEndpoints({
                     return;
                   }
 
-                  user.messages.push(message);
+                  const existingMessage = user.messages.find(
+                    (m) => m.id === message.id,
+                  );
+
+                  if (existingMessage) {
+                    Object.assign(existingMessage, message);
+                  } else {
+                    user.messages.push(message);
+                  }
                 },
               ),
             );
