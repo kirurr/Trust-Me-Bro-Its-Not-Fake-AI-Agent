@@ -22,7 +22,7 @@ export const chatApi = apiSlice.injectEndpoints({
           }
 
           const data = {
-            id: "",
+            id: message.userId + "-" + Math.random(),
             userId: message.userId,
             message: message.text,
             role: "system" as const,

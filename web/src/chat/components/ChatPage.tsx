@@ -10,17 +10,17 @@ export default function ChatPage() {
 
   return (
     <Card
-			className="max-w-5xl mx-auto mt-8"
+			className="w-7xl mx-auto my-8 h-[calc(100vh-4rem)]"
 			classNames={{
-				body: "flex flex-row gap-4"
+				body: "flex flex-1 gap-4 h-full",
 			}}
 		>
-      <div>
+      <div className="w-full max-w-1/4">
+				{isWsError && <div>Error: {wsError.toString()}</div>}
         {isLoading && <div>Loading...</div>}
         {isError && <div>Error: {error.toString()}</div>}
 
         {isSuccess && <ChatList users={data} />}
-				{isWsError && <div>Error: {wsError.toString()}</div>}
       </div>
 			<ChatWindow />
     </Card>

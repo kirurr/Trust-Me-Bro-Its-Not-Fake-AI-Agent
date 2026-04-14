@@ -4,8 +4,16 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+@plugin 'tailwind-scrollbar';
+
 @layer base {
   body {
-    @apply flex flex-col min-h-screen bg-linear-to-tr from-blue-950 to-purple-950 text-white ;
+    @apply flex flex-col h-screen max-h-screen bg-linear-to-tr from-blue-950 to-purple-950 text-white;
+  }
+
+  #root {
+    @apply flex flex-1 max-h-full;
   }
 }
+
+
