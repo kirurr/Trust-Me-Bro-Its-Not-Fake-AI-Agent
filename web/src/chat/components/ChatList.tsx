@@ -10,7 +10,7 @@ export default function ChatList({ users }: { users: UserWithMessages[] }) {
   const activeUser = useAppSelector(selectActiveUser);
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
       <ul className="flex flex-col">
         {users.map((user) => {
           const isActive = user.user.id === activeUser?.user.id;

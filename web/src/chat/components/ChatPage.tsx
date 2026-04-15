@@ -1,28 +1,38 @@
-import { Card } from "antd";
 import { useGetUsersQuery } from "../../users/userApi";
 import ChatList from "./ChatList";
 import ChatWindow from "./ChatWindow";
 import { useSubscribeToUserMessagesQuery } from "../chatApi";
 
 export default function ChatPage() {
-	const {isError: isWsError, error: wsError} = useSubscribeToUserMessagesQuery();
+  const { isError: isWsError, error: wsError } =
+    useSubscribeToUserMessagesQuery();
   const { data, isLoading, isSuccess, isError, error } = useGetUsersQuery();
 
   return (
-    <Card
-			className="w-7xl mx-auto my-8 h-[calc(100vh-4rem)]"
-			classNames={{
-				body: "flex flex-1 gap-4 h-full",
-			}}
-		>
-      <div className="w-full max-w-1/4">
-				{isWsError && <div>Error: {wsError.toString()}</div>}
-        {isLoading && <div>Loading...</div>}
-        {isError && <div>Error: {error.toString()}</div>}
+    <div className="w-full max-w-[90rem] mx-auto h-[calc(100vh-4rem)] bg-black/80 backdrop-blur-3xl p-4 flex flex-col gap-4 overflow-hidden rounded-xl">
+      <h1 className="text-3xl font-bold text-center shrink-0">
+        <span className="text-red-500">REMEMBER:</span> YOU ARE REAL HUMAN NOT A{" "}
+        <span className="text-red-500">FAKE AI AGENT</span>
+      </h1>
+      <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
+        <div className="w-1/4 overflow-hidden flex flex-col items-center gap-4">
+          <div className="text-center">
+            <h2 className="text-bold text-xl text-center pb-2">
+              real humans to chat with
+            </h2>
+          </div>
+          {isWsError && <div>Error: {wsError.toString()}</div>}
+          {isLoading && <div>Loading...</div>}
+          {isError && <div>Error: {error.toString()}</div>}
 
-        {isSuccess && <ChatList users={data} />}
+          {isSuccess && <ChatList users={data} />}
+          <div className="text-center">
+            <span className="text-red-500 text-bold block">warning:</span>
+            <em>dont tell them you are not AI</em>
+          </div>
+        </div>
+        <ChatWindow />
       </div>
-			<ChatWindow />
-    </Card>
+    </div>
   );
 }

@@ -6,14 +6,57 @@
 
 @plugin 'tailwind-scrollbar';
 
+@property --button-gradient-deg {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @layer base {
   body {
-    @apply flex flex-col h-screen max-h-screen bg-linear-to-tr from-blue-950 to-purple-950 text-white;
+    @apply bg-linear-to-b from-amber-600 via-white to-green-800 text-white overflow-hidden **:scrollbar **:scrollbar-track-transparent **:scrollbar-thumb-gray-700;
   }
 
   #root {
-    @apply flex flex-1 max-h-full;
+    @apply h-screen w-full flex items-center justify-center flex-col;
+  }
+
+  .i-button {
+    @apply py-2 px-8 rounded-lg from-amber-600 via-white to-green-800 text-black font-bold;
+
+    background-image: linear-gradient(
+      var(--button-gradient-deg) in lab,
+      oklch(44.8% 0.119 151.328),
+      white,
+      oklch(66.6% 0.179 58.318)
+    );
+    animation: i-button-animation linear 5s infinite;
+    animation-play-state: paused;
+    transition: scale 0.1s ease-in-out;
+
+    &:focus-visible {
+      @apply outline-none ring-2 ring-blue-400;
+    }
+
+    &:hover {
+      scale: 1.1;
+    }
+
+    &:is(:hover, :focus-visible) {
+      animation-play-state: running;
+    }
+
+    &:active {
+      scale: 0.95;
+    }
+  }
+
+  @keyframes i-button-animation {
+    from {
+      --button-gradient-deg: 0deg;
+    }
+    to {
+      --button-gradient-deg: 360deg;
+    }
   }
 }
-
-
