@@ -1,3 +1,5 @@
 .gocache
 *.exe
 user.txt
+todo.md
+.env

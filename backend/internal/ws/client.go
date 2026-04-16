@@ -18,28 +18,34 @@ func (c *Client) Send(msg []byte) error {
 	return c.conn.WriteMessage(websocket.TextMessage, msg)
 }
 
-type Hub struct {
+type Hub interface {
+	Register(c *Client)
+	Unregister(c *Client)
+	Broadcast(msg []byte)
+}
+
+type WsHub struct {
 	mu      sync.Mutex
 	clients map[*Client]struct{}
 }
 
-func NewHub() *Hub {
-	return &Hub{clients: make(map[*Client]struct{})}
+func NewWsHub() Hub {
+	return &WsHub{clients: make(map[*Client]struct{})}
 }
 
-func (h *Hub) Register(c *Client) {
+func (h *WsHub) Register(c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.clients[c] = struct{}{}
 }
 
-func (h *Hub) Unregister(c *Client) {
+func (h *WsHub) Unregister(c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	delete(h.clients, c)
 }
 
-func (h *Hub) Broadcast(msg []byte) {
+func (h *WsHub) Broadcast(msg []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

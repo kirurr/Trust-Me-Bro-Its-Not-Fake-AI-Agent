@@ -18,6 +18,12 @@ type Config struct {
 	URL string
 }
 
+type Broker interface {
+	Send(ctx context.Context, message Message, queue string) error
+	Messages(ctx context.Context, queue string) (<-chan Message, error)
+	Close()
+}
+
 type RabbitMQBroker struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
@@ -37,7 +43,7 @@ func DefaultConfigFromEnv() Config {
 	}
 }
 
-func NewRabbitMQBroker(config Config) (*RabbitMQBroker, error) {
+func NewRabbitMQBroker(config Config) (Broker, error) {
 	conn, err := amqp.Dial(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to rabbitmq: %w", err)
@@ -54,7 +60,7 @@ func NewRabbitMQBroker(config Config) (*RabbitMQBroker, error) {
 	}, nil
 }
 
-func NewRabbitMQBrokerFromEnv() (*RabbitMQBroker, error) {
+func NewRabbitMQBrokerFromEnv() (Broker, error) {
 	return NewRabbitMQBroker(DefaultConfigFromEnv())
 }
 

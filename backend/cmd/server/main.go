@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,7 +11,6 @@ import (
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/user"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/backend/internal/ws"
 	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
-	shareduser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
 )
 
 func main() {
@@ -38,9 +35,12 @@ func main() {
 		panic(err)
 	}
 
-	userRepo := user.NewUserRepository(db)
+	userRepo := user.NewUserPostgresRepository(db)
 
-	hub := ws.NewHub()
+	hub := ws.NewWsHub()
+
+	wsService := ws.NewWsService(userRepo, broker, hub)
+
 	go func() {
 		for {
 			select {
@@ -51,58 +51,12 @@ func main() {
 					return
 				}
 
-				m, err := userRepo.CreateMessage(shareduser.NewMessage(
-					"",
-					shareduser.RoleUser,
-					msg.UserId,
-					msg.Text,
-					"",
-				))
-
-				j, err := json.Marshal(m)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				hub.Broadcast([]byte(j))
-
-				if err != nil {
-					fmt.Println(err)
+				if err := wsService.BroadcastMessageToChat(&msg); err != nil {
+					fmt.Println("error broadcasting message: ", err)
 				}
 			}
 		}
 	}()
-
-	onSystemMessage := func(msg []byte) {
-		var m shareduser.Message
-
-		decoder := json.NewDecoder(bytes.NewReader(msg))
-		decoder.DisallowUnknownFields()
-
-		if err := decoder.Decode(&m); err != nil {
-			fmt.Println("decode error: ", err)
-			return
-		}
-
-		_, err := userRepo.CreateMessage(shareduser.NewMessage(
-			"",
-			shareduser.RoleSystem,
-			m.UserId,
-			m.Message,
-			"",
-		))
-		if err != nil {
-			fmt.Println("error creating system message: ", err)
-		}
-
-		err = broker.Send(ctx, sharedbroker.Message{
-			Text:   m.Message,
-			UserId: m.UserId,
-		}, sharedbroker.MakeClientQueueName(m.UserId))
-		if err != nil {
-			fmt.Println("error sending message to client: ", err)
-		}
-	}
 
 	mainMux := http.NewServeMux()
 	mainMux.Handle("/users/", http.StripPrefix("/users", user.GetUserMux(userRepo)))
@@ -111,7 +65,7 @@ func main() {
 		func(w http.ResponseWriter, r *http.Request) {
 			ws.WsHandler(
 				hub,
-				onSystemMessage,
+				wsService.OnSystemMessageCallback,
 				w,
 				r,
 			)

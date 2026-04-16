@@ -11,7 +11,7 @@ type UserWithMessages struct {
 	Messages []u.Message `json:"messages"`
 }
 
-type UserRepositoryInterface interface {
+type UserRepository interface {
 	GetUserById(id string) (*u.User, error)
 	GetUserMessages(id string) ([]u.Message, error)
 	CreateUser(user *u.User) error
@@ -19,17 +19,17 @@ type UserRepositoryInterface interface {
 	GetAllUsersWithMessages() ([]UserWithMessages, error)
 }
 
-type UserRepository struct {
+type UserPostgresRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepositoryInterface {
-	return &UserRepository{
+func NewUserPostgresRepository(db *sql.DB) UserRepository {
+	return &UserPostgresRepository{
 		db: db,
 	}
 }
 
-func (r *UserRepository) GetAllUsersWithMessages() ([]UserWithMessages, error) {
+func (r *UserPostgresRepository) GetAllUsersWithMessages() ([]UserWithMessages, error) {
 	rows, err := r.db.Query(
 		`SELECT u.id, m.id, m.role, m.user_id, m.message, m.sent_at
         FROM users u
@@ -88,7 +88,7 @@ func (r *UserRepository) GetAllUsersWithMessages() ([]UserWithMessages, error) {
 	return result, nil
 }
 
-func (r *UserRepository) GetUserById(id string) (*u.User, error) {
+func (r *UserPostgresRepository) GetUserById(id string) (*u.User, error) {
 	var user u.User
 	err := r.db.QueryRow(
 		"SELECT id FROM users WHERE id = $1",
@@ -104,7 +104,7 @@ func (r *UserRepository) GetUserById(id string) (*u.User, error) {
 	}
 	return &user, nil
 }
-func (r *UserRepository) GetUserMessages(id string) ([]u.Message, error) {
+func (r *UserPostgresRepository) GetUserMessages(id string) ([]u.Message, error) {
 	existingUser, err := r.GetUserById(id)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (r *UserRepository) GetUserMessages(id string) ([]u.Message, error) {
 	return messages, nil
 }
 
-func (r *UserRepository) CreateUser(user *u.User) error {
+func (r *UserPostgresRepository) CreateUser(user *u.User) error {
 	u, err := r.GetUserById(user.Id)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func (r *UserRepository) CreateUser(user *u.User) error {
 // CreateMessage creates a new message for the user
 //
 // If the user does not exist, it creates the user first
-func (r *UserRepository) CreateMessage(message *u.Message) (*u.Message, error) {
+func (r *UserPostgresRepository) CreateMessage(message *u.Message) (*u.Message, error) {
 	user, err := r.GetUserById(message.UserId)
 	if err != nil {
 		return nil, err

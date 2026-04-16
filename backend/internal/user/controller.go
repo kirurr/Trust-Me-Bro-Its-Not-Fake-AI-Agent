@@ -6,7 +6,7 @@ import (
 )
 
 func GetUserMux(
-	userRepo UserRepositoryInterface,
+	userRepo UserRepository,
 ) *http.ServeMux {
 	UserMux := http.NewServeMux()
 

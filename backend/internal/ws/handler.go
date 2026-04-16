@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -17,9 +18,9 @@ func GetUpgrader() *websocket.Upgrader {
 	}
 }
 
-type MessageHandler_cb func(msg []byte)
+type MessageHandler_cb func(ctx context.Context, msg []byte) error
 
-func WsHandler(hub *Hub, onMessage MessageHandler_cb, w http.ResponseWriter, r *http.Request) {
+func WsHandler(hub Hub, onMessage MessageHandler_cb, w http.ResponseWriter, r *http.Request) {
 	conn, err := GetUpgrader().Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("upgrade:", err)
@@ -47,6 +48,8 @@ func WsHandler(hub *Hub, onMessage MessageHandler_cb, w http.ResponseWriter, r *
 			break
 		}
 
-		onMessage(payload)
+		if err := onMessage(context.Background(), payload); err != nil {
+			log.Printf("error handling message: %v", err)
+		}
 	}
 }
