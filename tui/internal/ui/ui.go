@@ -57,7 +57,7 @@ type model struct {
 
 func InitialModel(ch <-chan broker.Message, send sendMessage_cb) model {
 	ta := textarea.New()
-	ta.Placeholder = "How to make an indian meal?"
+	ta.Placeholder = "Ask anything!"
 	ta.SetVirtualCursor(false)
 	ta.Focus()
 
@@ -205,7 +205,7 @@ func (m model) renderMessage(message chatMessage) string {
 	case roleUser:
 		return m.userMessageStyle.Render("You: ") + message.text
 	case roleRemote:
-		return m.remoteMessageStyle.Render("Indian person: ") + message.text
+		return m.remoteMessageStyle.Render("AI: ") + message.text
 	case roleSystem:
 		return m.systemMessageStyle.Render(message.text)
 	default:

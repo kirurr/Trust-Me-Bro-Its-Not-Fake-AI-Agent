@@ -16,14 +16,14 @@ export default function ChatWindow() {
 
   if (user === undefined) {
     return (
-      <div className="w-full bg-gray-900 text-3xl flex flex-col items-center justify-center">
+      <div className="w-full bg-slate-900/50 text-3xl flex flex-col items-center justify-center">
         <span>no user selected</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col min-h-0 bg-gray-900 p-2 rounded-md">
+    <div className="w-full h-full flex flex-col min-h-0 bg-slate-900/50 p-2 rounded-md">
       <ul className="flex-1 overflow-y-auto space-y-2 min-h-0">
         {user.messages.map((m) => {
           if (m.role === "user") {

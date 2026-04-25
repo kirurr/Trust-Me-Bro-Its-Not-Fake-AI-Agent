@@ -2,6 +2,7 @@ import { useSendMessageMutation } from "../chatApi";
 import { useState } from "react";
 import clsx from "clsx";
 import TextArea from "antd/es/input/TextArea";
+import { Button } from "antd";
 
 export default function ChatInputForm({
   userId,
@@ -44,20 +45,15 @@ export default function ChatInputForm({
         autoSize
         size="large"
       />
-      <ChatButton isLoading={isLoading} />
+      <Button
+        type="primary"
+        size="large"
+        htmlType="submit"
+        disabled={isLoading}
+      >
+        send
+      </Button>
       {isError && <div>Error: {error.toString()}</div>}
     </form>
-  );
-}
-
-function ChatButton({ isLoading }: { isLoading: boolean }) {
-  return (
-    <button
-			disabled={isLoading}
-			type="submit"
-			className="i-button animated"
-		>
-      send
-    </button>
   );
 }

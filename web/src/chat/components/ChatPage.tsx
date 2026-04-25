@@ -21,9 +21,9 @@ export default function ChatPage() {
               real humans to chat with
             </h2>
           </div>
-          {isWsError && <div>Error: {wsError.toString()}</div>}
+          {isWsError && <div>WS Error: {JSON.stringify(wsError, null, 2)}</div>}
           {isLoading && <div>Loading...</div>}
-          {isError && <div>Error: {error.toString()}</div>}
+          {isError && <div>Error: {JSON.stringify(error, null, 2)}</div>}
 
           {isSuccess && <ChatList users={data} />}
           <div className="text-center">
