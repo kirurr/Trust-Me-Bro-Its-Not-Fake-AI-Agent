@@ -4,12 +4,12 @@ import sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared
 
 type Message = sharedbroker.Message
 type Config = sharedbroker.Config
-type BrokerImpl = sharedbroker.RabbitMQBroker
+type Broker = sharedbroker.Broker
 
-func NewRabbitMQBroker() (*BrokerImpl, error) {
+func NewRabbitMQBroker() (Broker, error) {
 	return sharedbroker.NewRabbitMQBrokerFromEnv()
 }
 
-func NewRabbitMQBrokerWithConfig(config Config) (*BrokerImpl, error) {
+func NewRabbitMQBrokerWithConfig(config Config) (Broker, error) {
 	return sharedbroker.NewRabbitMQBroker(config)
 }

@@ -14,6 +14,9 @@ export const chatApi = apiSlice.injectEndpoints({
     sendMessage: builder.mutation<void, { userId: string; text: string }>({
       queryFn: (message) => {
         const ws = getWs();
+				if (!ws) {
+					throw new Error("WebSocket is not open yet");
+				}
 
         return new Promise((resolve, reject) => {
           if (ws.readyState !== WebSocket.OPEN) {
@@ -52,6 +55,9 @@ export const chatApi = apiSlice.injectEndpoints({
 
       async onCacheEntryAdded(_, { cacheDataLoaded, cacheEntryRemoved }) {
         const ws = getWs();
+				if (!ws) {
+					throw new Error("WebSocket is not open yet");
+				}
 
         try {
           await cacheDataLoaded;

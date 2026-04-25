@@ -1,14 +1,50 @@
 services:
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_BACKEND_URL: http://localhost:8080
+        VITE_BACKEND_WS_URL: ws://localhost:8080/ws
+    container_name: web
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: backend
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://admin:secret@postgres:5432/mydb
+      CORS_ALLOWED_ORIGIN: http://localhost:5173
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
   tui:
     build:
       context: .
       dockerfile: tui/Dockerfile
     container_name: tui
+    profiles:
+      - tui
     depends_on:
       rabbitmq:
         condition: service_healthy
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      BACKEND_URL: http://backend:8080/
+    volumes:
+      - ./tui:/app
     stdin_open: true
     tty: true
     restart: unless-stopped
