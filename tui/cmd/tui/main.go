@@ -58,15 +58,15 @@ func main() {
 		m, err := user.GetUserMessagesFromBackend(u.Id.String())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
-			p.Send(
-				ui.ExternalMessage{
-					Data: broker.Message{
-						Text:   "Oof: " + err.Error(),
-						UserId: u.Id.String(),
-					},
-					Role: ui.RoleSystem,
-				},
-			)
+			// p.Send(
+			// 	ui.ExternalMessage{
+			// 		Data: broker.Message{
+			// 			Text:   "Oof: " + err.Error(),
+			// 			UserId: u.Id.String(),
+			// 		},
+			// 		Role: ui.RoleSystem,
+			// 	},
+			// )
 		}
 		for _, message := range m {
 			if message.Role == shareduser.RoleUser {
