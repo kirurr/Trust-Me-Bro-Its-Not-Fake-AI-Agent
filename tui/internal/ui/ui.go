@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/cursor"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/broker"
+	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
 )
 
 type MessageRole string
@@ -21,6 +23,52 @@ const (
 	RoleRemote MessageRole = "remote"
 	RoleSystem MessageRole = "system"
 )
+
+type keyMap struct {
+	Send  key.Binding
+	Quit  key.Binding
+	Help  key.Binding
+	Up    key.Binding
+	Down  key.Binding
+}
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Send,
+		k.Quit,
+		k.Help,
+	}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down},
+		{k.Send, k.Quit, k.Help},
+	}
+}
+
+var keys = keyMap{
+	Send: key.NewBinding(
+		key.WithKeys("ctrl+enter", "ctrl+j"),
+		key.WithHelp("ctrl+enter", "send"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("ctrl+c", "esc"),
+		key.WithHelp("ctrl+c", "quit"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "help"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "scroll up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "scroll down"),
+	),
+}
 
 type ExternalMessage struct {
 	Data broker.Message
@@ -52,6 +100,8 @@ type model struct {
 	userMessageStyle   lipgloss.Style
 	remoteMessageStyle lipgloss.Style
 	systemMessageStyle lipgloss.Style
+	help               help.Model
+	keys               keyMap
 	err                error
 }
 
@@ -87,6 +137,8 @@ func InitialModel(ch <-chan broker.Message, send sendMessage_cb) model {
 		userMessageStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
 		remoteMessageStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
 		systemMessageStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("9")),
+		help:               help.New(),
+		keys:               keys,
 		err:                nil,
 		incoming_ch:        ch,
 		send:               send,
@@ -124,7 +176,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.viewport.SetWidth(msg.Width)
 		m.textarea.SetWidth(msg.Width)
-		m.viewport.SetHeight(msg.Height - m.textarea.Height() - lipgloss.Height(m.headingView()) - 1)
+		m.help.SetWidth(msg.Width)
+		helpHeight := lipgloss.Height(m.helpView())
+		m.viewport.SetHeight(msg.Height - m.textarea.Height() - lipgloss.Height(m.headingView()) - helpHeight - 1)
 
 		if len(m.chat.GetAllMessages()) > 0 {
 			m.refreshViewport()
@@ -147,6 +201,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 			return m, sendToBroker(m.send, broker.Message{Text: text})
+
+		case "?":
+			m.help.ShowAll = !m.help.ShowAll
 
 		default:
 			var cmds []tea.Cmd
@@ -173,14 +230,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	viewportView := m.viewport.View()
+	help := m.helpView()
 	view := tea.NewView(
-		m.headingView() + "\n" + viewportView + "\n\n" + m.textarea.View(),
+		m.headingView() + "\n" + viewportView + "\n" + m.textarea.View() + "\n" + help,
 	)
 
 	cursor := m.textarea.Cursor()
 	if cursor != nil {
-		cursor.Y += lipgloss.Height(viewportView) + 1
 		cursor.Y += lipgloss.Height(m.headingView())
+		cursor.Y += lipgloss.Height(viewportView)
 	}
 
 	view.Cursor = cursor
@@ -253,4 +311,8 @@ func (m model) headingView() string {
 		lipgloss.NewStyle().Width(m.viewport.Width()).Render(heading),
 	)
 	return headingView
+}
+
+func (m model) helpView() string {
+	return m.help.View(m.keys)
 }

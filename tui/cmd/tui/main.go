@@ -7,21 +7,20 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	sharedbroker "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
+	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/broker"
 	shareduser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared/user"
-	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/broker"
 	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/ui"
-	"github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/user"
+	tuiuser "github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/tui/internal/user"
 )
 
 func main() {
-	u, err := user.CreateOrLoadUser()
+	u, err := tuiuser.CreateOrLoadUser()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
 		os.Exit(1)
 	}
 
-	b, err := broker.NewRabbitMQBroker()
+	b, err := broker.NewRabbitMQBrokerFromEnv()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
 		os.Exit(1)
@@ -33,7 +32,7 @@ func main() {
 
 	incoming_ch, err := b.Messages(
 		ctx,
-		sharedbroker.MakeClientQueueName(u.Id.String()),
+		broker.MakeClientQueueName(u.Id.String()),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
@@ -49,13 +48,13 @@ func main() {
 			return b.Send(
 				sendCtx,
 				message,
-				sharedbroker.MakeBackendQueueName(),
+				broker.MakeBackendQueueName(),
 			)
 		}),
 	)
 
 	go func() {
-		m, err := user.GetUserMessagesFromBackend(u.Id.String())
+		m, err := tuiuser.GetUserMessagesFromBackend(u.Id.String())
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Oof: %v\n", err)
 			// p.Send(

@@ -10,8 +10,6 @@ require (
 	github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared v0.0.0
 )
 
-replace github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared => ../shared
-
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/charmbracelet/colorprofile v0.4.2 // indirect
@@ -31,3 +29,5 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 )
+
+replace github.com/kirurr/Trust-Me-Bro-Its-Not-Fake-AI-Agent/shared => ../shared
