@@ -63,6 +63,14 @@ It's like ChatGPT, but the "GPT" stands for **G**uy **P**retending **T**o be sma
 
 ---
 
+## 📋 TODO
+
+- [ ] **Pretty the Web UI** — Make the dashboard look less like a prototype
+- [ ] **Pretty the TUI** — Terminal interface needs some love
+- [ ] **Tool Calling** — Add function calling (like real AI agents do): files, terminal commands
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
